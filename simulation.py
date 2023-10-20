@@ -1,4 +1,5 @@
 from config import TRIPS_PER_SIM, TRIP_BANKROLL, SESSIONS_PER_TRIP, SESSION_BANKROLL, ROLLS_PER_HOUR, HRS_PER_SESSION
+from craps_game import CrapsGame
 from bet_table import BetTable
 from utilities import roll_dice
 
@@ -14,50 +15,10 @@ def run_sim(strategy):
     return pnl_by_roll, pnl_by_session, pnl_by_trip
 
 def run_game(starting_bankroll, strategy, pnl_by_roll):
-    
-    # Initialize
-    bankroll = starting_bankroll
-    bet_table = BetTable()
-    point = None
-    roll_history = []
-    strategy.initial_bets(bet_table)
-    bankroll -= bet_table.get_total_bet()
-
-    # Come Out Roll
-    die1, die2 = roll_dice()
-    roll_sum = die1 + die2
-    roll_history.append((die1, die2)) # Update roll history
-    if roll_sum in [7, 11]:
-        return bankroll + bet_table.get_bet_amount('Pass Line') * 2 
-    elif roll_sum in [2, 3, 12]:
-        return bankroll
-    else:
-        point = roll_sum
-        strategy.point_set_bets(bet_table, point)
-
-    # Loop to hit the point or seven out
-    while point:
-        die1, die2 = roll_dice()
-        roll_history.append((die1, die2)) # Update roll history
-        roll_sum = die1 + die2
-        
-        if roll_sum == point: # Point is hit
-            bankroll += bet_table.get_bet_amount('Pass Line')
-            return bankroll
-        elif roll_sum == 7:
-            # Seven out
-            bankroll -= bet_table.get_bet_amount('Pass Line')  # Assuming you have a bet for 'Point' in bet_table
-            return bankroll
-        
-        strategy.adjust_for_roll(bet_table, die1, die2, roll_history)
-
-    # Optional: Adjust bankroll for other bets that might have won or lost
-    # bankroll += bet_table.some_other_bet_calculation()
-
-    game_pnl = bankroll - starting_bankroll
-    pnl_by_roll.append(game_pnl)
-    
-    return bankroll  # Return updated bankroll after one game
+    my_game = CrapsGame(initial_bankroll=starting_bankroll, strategy=strategy)
+    my_game.run_game()
+    pnl_by_roll.append(my_game.pnl_by_roll[-1])  # Assuming you are keeping track of pnl_by_roll in the class
+    return my_game.bankroll
 
 def run_session(strategy, pnl_by_session, pnl_by_roll):
     bankroll = SESSION_BANKROLL

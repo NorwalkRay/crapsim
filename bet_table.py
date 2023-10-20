@@ -19,3 +19,12 @@ class BetTable:
     
     def get_total_bet(self):
         return sum(bet['bet_amount'] for bet in self.table)
+
+    def clear_bets(self):
+        self.table = []
+
+    def __str__(self):
+        return ', '.join(f"{bet['bet_name']}: ${bet['bet_amount']}" for bet in self.table)
+
+    def __repr__(self):
+        return self.__str__()

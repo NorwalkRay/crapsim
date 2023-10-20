@@ -1,15 +1,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import csv
-from random import randint
-from collections import Counter
-from collections import defaultdict
-from abc import ABC, abstractmethod
 from strategy import Hedge6_Strategy
 from simulation import run_sim
 from utilities import roll_dice
-from config import TRIPS_PER_SIM
 
 if __name__ == '__main__':
 
@@ -18,7 +12,7 @@ if __name__ == '__main__':
  #   my_game.run_game()
     pnl_by_roll, pnl_by_session, pnl_by_trip = run_sim(strategy)
 
-    # Generate Metrics and Charts
+    # Generate Metrics and Charts --- move this elsewhere eventually.
     avg_pl_per_roll = np.mean(pnl_by_roll)
     avg_pl_per_session = np.mean(pnl_by_session)
     avg_pl_per_trip = np.mean(pnl_by_trip)
