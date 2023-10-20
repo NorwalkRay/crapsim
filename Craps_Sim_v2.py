@@ -68,8 +68,8 @@ class Hedge6_Strategy(Strategy):
     def adjust_for_roll(self, bet_table, die1, die2, roll_history):
         roll_sum = die1 + die2
         if roll_sum == 7:
-            #lose
-        elif
+            pass
+        #more cases
         last_roll = roll_history[-1]
         if sum(last_roll) == 7:  # Replace with your own win condition logic
             # Progression logic, such as doubling the bet
@@ -79,6 +79,7 @@ class Hedge6_Strategy(Strategy):
         else:
             # Reset to base bet
             bet_table.add_bet('Pass Line', 25)
+            
 
 class BetTable:
     def __init__(self):
@@ -115,7 +116,7 @@ def run_game(starting_bankroll, strategy, pnl_by_roll):
     point = None
     roll_history = []
     strategy.initial_bets(bet_table)
-    bankroll -= strategy.get_total_bet()
+    bankroll -= bet_table.get_total_bet()
 
     # Come Out Roll
     die1, die2 = roll_dice()
@@ -140,7 +141,7 @@ def run_game(starting_bankroll, strategy, pnl_by_roll):
             return bankroll
         elif roll_sum == 7:
             # Seven out
-            bankroll -= bet_table.get_bet_amount('Point')  # Assuming you have a bet for 'Point' in bet_table
+            bankroll -= bet_table.get_bet_amount('Pass Line')  # Assuming you have a bet for 'Point' in bet_table
             return bankroll
         
         strategy.adjust_for_roll(bet_table, die1, die2, roll_history)
@@ -191,8 +192,44 @@ def run_sim(strategy):
 
     return pnl_by_roll, pnl_by_session, pnl_by_trip
 
+class CrapsGame:
+    def __init__(self, initial_bankroll, strategy):
+        self.bankroll = initial_bankroll
+        self.strategy = strategy
+        self.bet_table = BetTable()
+        self.point = None
+        self.roll_history = []
+        self.pnl_by_roll = []
+
+    def place_initial_bets(self):
+        self.strategy.initial_bets(self.bet_table)
+        self.bankroll -= self.bet_table.get_total_bet()
+    
+    def point_set_bets(self):
+        self.strategy.point_set_bets(self.bet_table, self.point)
+
+    def adjust_for_roll(self, die1, die2):
+        self.strategy.adjust_for_roll(self.bet_table, die1, die2, self.roll_history)
+
+    # ... (your other methods here)
+    
+    def run_game(self):
+        self.place_initial_bets()
+        die1, die2 = roll_dice()
+        roll_sum = die1 + die2
+        self.roll_history.append((die1, die2))
+
+        # ... (rest of the logic)
+        game_pnl = self.bankroll - self.bankroll # need to fix
+        self.pnl_by_roll.append(game_pnl)
+
+
+
 if __name__ == '__main__':
+
     strategy = Hedge6_Strategy()
+    my_game = CrapsGame(initial_bankroll=1000, strategy=strategy)
+    my_game.run_game()
     pnl_by_roll, pnl_by_session, pnl_by_trip = run_sim(strategy)
 
     # Generate Metrics and Charts

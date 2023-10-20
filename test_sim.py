@@ -8,11 +8,11 @@ class TestBetTable(unittest.TestCase):
         table.add_bet('Pass Line', 25)
         self.assertEqual(table.get_bet_amount('Pass Line'), 25)
         
-    def test_total_amount_bet(self):
+    def test_get_total_bet(self):
         table = BetTable()
         table.add_bet('Pass Line', 25)
         table.add_bet('Odds', 50)
-        self.assertEqual(table.total_amount_bet(), 75)
+        self.assertEqual(table.get_total_bet(), 75)
 
 if __name__ == '__main__':
     unittest.main()
