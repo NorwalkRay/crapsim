@@ -8,8 +8,6 @@ from utilities import roll_dice
 if __name__ == '__main__':
 
     strategy = Hedge6_Strategy()
- #   my_game = CrapsGame(initial_bankroll=1000, strategy=strategy)
- #   my_game.run_game()
     pnl_by_roll, pnl_by_session, pnl_by_trip = run_sim(strategy)
 
     # Generate Metrics and Charts --- move this elsewhere eventually.
