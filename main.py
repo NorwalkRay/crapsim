@@ -7,6 +7,9 @@ from utilities import roll_dice
 
 if __name__ == '__main__':
 
+    # Key Simulation Inputs: Strategy
+    # To calculate P&L, I need bettable and a payouttable
+
     strategy = Hedge6_Strategy()
     pnl_by_roll, pnl_by_session, pnl_by_trip = run_sim(strategy)
 

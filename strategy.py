@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 class Strategy(ABC):
     
     @abstractmethod
-    def place_initial_bets(self, bet_table):
+    def place_initial_bets(self, bet_table, running_bankroll):
         pass
     
     @abstractmethod
@@ -21,8 +21,13 @@ class Hedge6_Strategy(Strategy):
     def __init__(self):
         self.hardway_counter = 0
 
-    def place_initial_bets(self, bet_table):
-        bet_table.add_bet('Pass Line', 25)
+    def place_initial_bets(self, bet_table, running_bankroll):
+        bet_amount = 25 # defined
+        if running_bankroll < bet_amount: return False
+        else: 
+            bet_table.add_bet('Pass Line', bet_amount)
+            running_bankroll -= bet_amount
+            return True
         
     def place_post_point_bets(self, bet_table, point):
         if point == 4:
