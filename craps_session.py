@@ -22,8 +22,7 @@ class CrapsSession:
  
     def run_game(self):
         self.game_counter += 1
-        print(f"Start of Game #{self.game_counter}, roll number {len(self.roll_history) + 1} of session." +
-              "{self.running_bankroll} on rack | {self.bet_table.get_total_bet()} on table | Session pnl ${sum(self.pnl_by_roll)}")
+        print(f"Start of Game #{self.game_counter}, roll number {len(self.roll_history) + 1} of session. {self.running_bankroll} on rack | {self.bet_table.get_total_bet()} on table | Session pnl ${sum(self.pnl_by_roll)}")
         if self.place_initial_bets() == False: # not enough funds to place initial come out roll bet.
             print(f"Too low bankroll to place bets: {self.running_bankroll}, setting to 0")
             self.running_bankroll = 0 # hack right now, to exit loop in simulator
@@ -41,16 +40,6 @@ class CrapsSession:
                         game_ongoing == self.execute_next_roll()        
         print(f"Ending bankroll for this game: {self.running_bankroll}")
         print(f"Bets remaining on felt for this game: {self.bet_table.get_total_bet()}")
-        game_pnl = sum(self.pnl_by_roll)
-        expected_pnl = (self.bankroll + self.bet_table.get_total_bet()) - self.game_start_bankroll
-        
-        print(f"Calculated P&L for this game: {game_pnl}")
-    
-        # Verify that the calculated P&L matches with the expected P&L
-        if game_pnl == expected_pnl:
-            print("P&L calculation is consistent.")
-        else:
-            print(f"Something is off. Expected P&L: {expected_pnl}, but got {game_pnl}")
 
     # This method walks through every bet. It adjusts the pnl, moves money in and out of bankroll, and adjusts the bet table. to do: break out this monster function
     def make_payouts(self, die1, die2):
@@ -107,37 +96,37 @@ class CrapsSession:
                         pnl -= self.bet_table.get_bet_amount('Hard 8') # hard 8 loser
                         self.bet_table.remove_bet('Hard 8') # remove from table
                     elif roll_sum in [6, 8] and die1 == die2: # hard 6 or 8 winner
-                        payout = self.bet_table.get_bet_amount['Hard 6'] * payout_multipliers['Hard 6'] # using hard 6, assuming hard 8 is always the same when point is 6 and 8
+                        payout = self.bet_table.get_bet_amount('Hard 6') * payout_multipliers['Hard 6'] # using hard 6, assuming hard 8 is always the same when point is 6 and 8
                         pnl += payout # add payout to pnl
                         self.running_bankroll += payout # add payout to bankroll
-                        self.running_bankroll += self.bet_table.get_bet_amount['Hard 6'] # return hard 6 original bet to bankroll
-                        if roll_sum == 6: self.bet_table.remove_bet['Hard 6'] # remove hard 6 bet
-                        elif roll_sum == 8: self.bet_table.remove_bet['Hard 8'] # remove hard 8 bet
+                        self.running_bankroll += self.bet_table.get_bet_amount('Hard 6') # return hard 6 original bet to bankroll
+                        if roll_sum == 6: self.bet_table.remove_bet('Hard 6') # remove hard 6 bet
+                        elif roll_sum == 8: self.bet_table.remove_bet('Hard 8') # remove hard 8 bet
                 elif roll_sum in [5, 9]: pass # no payouts in current strategy
                 elif roll_sum in [4, 10]: pass # no payouts in current strategy
                 elif roll_sum == 6: # 6, but not the point
-                    payout = self.bet_table.get_bet_amount['Place 6'] * payout_multipliers['Place 6'] # calc place 6 winnings
+                    payout = self.bet_table.get_bet_amount('Place 6') * payout_multipliers['Place 6'] # calc place 6 winnings
                     pnl += payout # add payout to pnl
                     self.running_bankroll += payout # add payout to bankroll
                     if die1 == die2: # hard 6
-                        payout = self.bet_table.get_bet_amount['Hard 6'] * payout_multipliers['Hard 6']
+                        payout = self.bet_table.get_bet_amount('Hard 6') * payout_multipliers['Hard 6']
                         pnl += payout
                         self.running_bankroll += payout
                     else: #hard 6 loser
-                        pnl -= self.bet_table.get_bet_amount['Hard 6'] # include lost bet in pnl
-                        self.running_bankroll -= self.bet_table.get_bet_amount['Hard 6'] # subtract from bankroll to represent re-bet
+                        pnl -= self.bet_table.get_bet_amount('Hard 6') # include lost bet in pnl
+                        self.running_bankroll -= self.bet_table.get_bet_amount('Hard 6') # subtract from bankroll to represent re-bet
                         # instead of removing the lost hardway and adding it back, we'll just leave it (and subtract from bankroll above)
                 elif roll_sum == 8: # 8, but not the point
-                    payout = self.bet_table.get_bet_amount['Place 8'] * payout_multipliers['Place 8'] # calc place 8 winnings
+                    payout = self.bet_table.get_bet_amount('Place 8') * payout_multipliers['Place 8'] # calc place 8 winnings
                     pnl += payout # add payout to pnl
                     self.running_bankroll += payout # add payout to bankroll
                     if die1 == die2: # hard 8
-                        payout = self.bet_table.get_bet_amount['Hard 8'] * payout_multipliers['Hard 8']
+                        payout = self.bet_table.get_bet_amount('Hard 8') * payout_multipliers['Hard 8']
                         pnl += payout
                         self.running_bankroll += payout
                     else: #hard 8 loser
-                        pnl -= self.bet_table.get_bet_amount['Hard 8'] # include lost bet in pnl
-                        self.running_bankroll -= self.bet_table.get_bet_amount['Hard 8'] # subtract from bankroll to represent re-bet
+                        pnl -= self.bet_table.get_bet_amount('Hard 8') # include lost bet in pnl
+                        self.running_bankroll -= self.bet_table.get_bet_amount('Hard 8') # subtract from bankroll to represent re-bet
                         # instead of removing the lost hardway and adding it back, we'll just leave it (and subtract from bankroll above)
                 else:
                     print(f"something has gone wrong, should not reach here. diagnose")
@@ -147,12 +136,18 @@ class CrapsSession:
     # rolls the dice, adds roll to history, calls payout calculator, adds pnl to pnl_by_roll, returns true unless roll results in end of game.
     def execute_next_roll(self):
         die1, die2 = roll_dice()
+        roll_sum = die1 + die2
         self.roll_history.append((die1, die2))
         self.pnl_by_roll.append(self.make_payouts(die1, die2))
-        if (self.point is None and (die1 + die2) in [2,3,7,11,12]) or (self.point is not None and (die1 + die2) == 7) or (self.point == (die1 + die2)): # come out roll winner or lose ends game, point established, seven out ends game, or winner 
+        if (self.point is None and (roll_sum) in [2,3,7,11,12]) or (self.point is not None and (roll_sum) == 7) or (self.point == roll_sum): # come out roll winner or lose ends game, point established, seven out ends game, or winner 
             self.point = None
             return False
-        else: return True
+        else: # the game continues
+            if self.point is None: # if it was the come out roll
+                self.point = roll_sum # then the point is now established
+                return True
+            else: # if it was not the come out
+                return True
     
         # for bet in self.bet_table.table: # iterate through every bet in the bettable
         #     bet_name = bet['bet_name']
