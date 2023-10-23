@@ -3,46 +3,25 @@ from craps_session import CrapsSession
 from bet_table import BetTable
 from utilities import roll_dice
 
-def run_sim(strategy):
+def run_sim(strategy, num_sessions):
     pnl_by_roll = []
+    pnl_by_game = []
     pnl_by_session = []
-    pnl_by_trip = []
 
-    for _ in range(TRIPS_PER_SIM):
-        run_trip(strategy, pnl_by_trip, pnl_by_session, pnl_by_roll)
-        # Check bankroll, break if needed
+    for session_num in range(num_sessions):  # Outer loop to run multiple sessions
+        my_session = CrapsSession(SESSION_BANKROLL, strategy)  # Initialize a new session each time
+        rolls_in_session = ROLLS_PER_HOUR * HRS_PER_SESSION 
+        
+        while len(my_session.roll_history) < rolls_in_session:  # Inner loop to run each session
+            pnl_starting = sum(my_session.pnl_by_roll)
+            my_session.run_game()  # Run a game, which may consist of 1 or more rolls
+            pnl_ending = sum(my_session.pnl_by_roll)
+            pnl_by_game.append(pnl_ending - pnl_starting)
+            if my_session.running_bankroll <= 0:  #  to do: Handle case with low but not zero bankroll
+                print(f"Session {session_num + 1}: Bankroll depleted. Ending session.")
+                break
 
-    return pnl_by_roll, pnl_by_session, pnl_by_trip
+        pnl_by_roll.extend(my_session.pnl_by_roll)  # Extend the list to include PnL of all rolls in this session
+        pnl_by_session.append(sum(my_session.pnl_by_roll))  # Add up the PnL for the entire session
 
-def run_session(strategy, pnl_by_session, pnl_by_roll):
-    bankroll = SESSION_BANKROLL
-    rolls_in_session = ROLLS_PER_HOUR * HRS_PER_SESSION
-
-    my_game = CrapsSession(initial_bankroll=bankroll, strategy=strategy)
-    print(f"Starting session bankroll: {SESSION_BANKROLL}")
-    for _ in range(rolls_in_session):
-        my_game.run_game()
-        pnl_by_roll.append(my_game.pnl_by_roll[-1])
-        bankroll = my_game.bankroll  # Update bankroll from CrapsGame instance
-        if bankroll <= 0:
-            break
-    print(f"Ending session bankroll: {bankroll}")
-    session_pnl = bankroll - SESSION_BANKROLL
-    print(f"P&L for this session: {session_pnl}")
-    pnl_by_session.append(session_pnl)
-    
-    return bankroll  # Return updated bankroll after one session
-
-def run_trip(strategy, pnl_by_trip, pnl_by_session, pnl_by_roll):
-    bankroll = TRIP_BANKROLL
-    print(f"Starting trip bankroll: {TRIP_BANKROLL}")
-    for _ in range(SESSIONS_PER_TRIP):
-        bankroll = run_session(strategy, pnl_by_session, pnl_by_roll)
-        if bankroll <= 0:
-            break # End session if bankroll hits zero
-    print(f"Ending trip bankroll: {bankroll}")
-    trip_pnl = bankroll - TRIP_BANKROLL
-    print(f"P&L for this trip: {trip_pnl}")
-    pnl_by_trip.append(trip_pnl)
-    
-    return bankroll  # Return updated bankroll after one trip
+    return pnl_by_roll, pnl_by_game, pnl_by_session

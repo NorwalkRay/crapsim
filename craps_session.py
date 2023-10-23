@@ -4,114 +4,42 @@ from utilities import roll_dice
 class CrapsSession:
     def __init__(self, session_max_bankroll, strategy):
         self.game_counter = 0
-        self.roll_history = [] # 2 x n array of all rolls, including the come out roll(s). Each column represents 1 die.
-        self.running_bankroll = session_max_bankroll
+        self.roll_history = [] # 2 x n array of all rolls, including the come out roll(s). Each column represents 1 die, accumulates over whole session
+        self.running_bankroll = session_max_bankroll # cumulative running bankroll over the whole session
         self.point = None # the number of the point. none prior to establishment.
         self.bet_table = BetTable() # represents all bets on the table
         self.strategy = strategy # betting strategy to use
-        self.pnl_by_roll = [] # net p&l after each roll
+        self.pnl_by_roll = [] # net p&l after each roll, accumulates over whole session
 
     def place_initial_bets(self):
         return self.strategy.place_initial_bets(self.bet_table, self.running_bankroll) # updates the bet table with the initial bets of the strat
     
     def place_post_point_bets(self):
-        amount_to_bet = self.strategy.place_post_point_bets(self.bet_table, self.point)
-        self.bankroll -= amount_to_bet
+        return self.strategy.place_post_point_bets(self.bet_table, self.running_bankroll, self.point)
 
-    def update_bets_after_roll(self, die1, die2):
-        self.strategy.update_bets_after_roll(self.bet_table, die1, die2, self.roll_history)
+    # def update_bets_after_roll(self, die1, die2):
+    #     self.strategy.update_bets_after_roll(self.bet_table, die1, die2, self.roll_history)
  
     def run_game(self):
         self.game_counter += 1
         print(f"Start of Game #{self.game_counter}, roll number {len(self.roll_history) + 1} of session.
               {self.running_bankroll} on rack | {self.bet_table.get_total_bet()} on table | Session pnl ${sum(self.pnl_by_roll)}")
         if self.place_initial_bets() == False: # not enough funds to place initial come out roll bet.
-            pass # To Do: look into pass, break, or something else. how to leave game state?
+            print(f"Too low bankroll to place bets: {self.running_bankroll}, setting to 0")
+            self.running_bankroll = 0 # hack right now, to exit loop in simulator
         else: # initial come out bet(s) successfully placed
             print(f"Game #{self.game_counter}: {self.running_bankroll} on rack | {self.bet_table.get_total_bet()} on table") # bankroll should be decremented, total of the two should be same as before.
-            die1, die2 = self.execute_next_roll()
-            roll_sum = die1 + die2
-        
-        # if roll_sum in [7, 11]:
-        #     self.bankroll += self.bet_table.get_bet_amount('Pass Line') # the winnings are put into the bankroll. the original bet is not put back in bankroll, but stays on bet table
-        #     self.pnl_by_roll.append(self.bet_table.get_bet_amount('Pass Line'))
-        # elif roll_sum in [2, 3, 12]:
-        #     self.pnl_by_roll.append(-self.bet_table.get_bet_amount('Pass Line'))
-        #     self.bet_table.remove_bet('Pass Line')  # Remove pass line bet, loss is already accounted for by subtracting initial bet from bankroll.
-        # else:
-        #     self.pnl_by_roll.append(0)
-        #     self.point = roll_sum
-        #     self.place_post_point_bets()
-        #     while self.point:
-        #         die1, die2 = roll_dice()
-        #         self.roll_history.append((die1, die2))
-        #         roll_sum = die1 + die2
-        #         if roll_sum in [2,3,11,12]: # No Changes
-        #             self.pnl_by_roll.append(0)
-        #         elif roll_sum == 7: # gotta pay don'ts
-        #             self.pnl_by_roll.append(-self.bet_table.get_total_bet())
-        #             self.bet_table.clear_bets()
-        #             self.point = None  # Reset point
-        #         elif roll_sum == self.point:
-        #             self.pnl_by_roll.append(self.bet_table.get_bet_amount('Pass Line'))
-        #             self.bankroll += self.bet_table.get_bet_amount('Pass Line')
-        #             if roll_sum in [4,10]:
-        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') * 2 # odds pay 2:1
-        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') # return odds
-        #                 self.pnl_by_roll.append(self.bet_table.get_bet_amount('Odds') * 2) # p&l is only profit. not original odds bet
-        #                 self.bet_table.remove_bet('Odds')
-        #                 # To Add: Hardway check
-        #             elif roll_sum in [5,9]:
-        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') * 1.5 # odds pay 3:2
-        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') # return odds
-        #                 self.pnl_by_roll.append(self.bet_table.get_bet_amount('Odds') * 1.5)
-        #                 self.bet_table.remove_bet('Odds')
-        #             elif roll_sum == 6: 
-        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') * 1.2 # odds pay 6:5
-        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') # return odds
-        #                 self.bet_table.remove_bet('Odds')
-        #                 if die1 == die2: # hardway
-        #                     self.bankroll += self.bet_table.get_bet_amount('Hard 6') * 9
-        #                     self.pnl_by_roll.append((self.bet_table.get_bet_amount('Odds') * 1.2)+(self.bet_table.get_bet_amount('Hard 6') * 9))   
-        #                 else: # easy 6
-        #                     self.bankroll -= self.bet_table.get_bet_amount('Hard 6') # back up on hard 6
-        #                     self.pnl_by_roll.append((self.bet_table.get_bet_amount('Odds') * 1.2)-(self.bet_table.get_bet_amount('Hard 6')))
-        #             elif roll_sum == 8:
-        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') * 1.2 # odds pay 6:5
-        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') # return odds
-        #                 self.bet_table.remove_bet('Odds')
-        #                 if die1 == die2: # hardway
-        #                     self.bankroll += self.bet_table.get_bet_amount('Hard 8') * 9   
-        #                     self.pnl_by_roll.append((self.bet_table.get_bet_amount('Odds') * 1.2)+(self.bet_table.get_bet_amount('Hard 8') * 9)) 
-        #                 else: # easy 8
-        #                     self.bankroll -= self.bet_table.get_bet_amount('Hard 8') # back up on hard 8
-        #                     self.pnl_by_roll.append((self.bet_table.get_bet_amount('Odds') * 1.2)-(self.bet_table.get_bet_amount('Hard 8')))
-        #             else:
-        #                 raise ValueError(f"Unhandled roll_sum: {roll_sum}")
-        #             self.point = None     
-        #         elif roll_sum in [4,5,9,10]: # No Changes (not the point)
-        #             self.pnl_by_roll.append(0)
-        #         elif roll_sum == 6:
-        #             self.bankroll += self.bet_table.get_bet_amount('Place 6') * 7.0 / 6.0
-        #             if die1 == die2: # hardway
-        #                 self.bankroll += self.bet_table.get_bet_amount('Hard 6') * 9
-        #                 self.pnl_by_roll.append((self.bet_table.get_bet_amount('Place 6') * 7.0 / 6.0)+(self.bet_table.get_bet_amount('Hard 6') * 9))
-        #             else: # easy way
-        #                 self.bankroll -= self.bet_table.get_bet_amount('Hard 6') # back up on the hard 6
-        #                 self.pnl_by_roll.append((self.bet_table.get_bet_amount('Place 6') * 7.0 / 6.0)-(self.bet_table.get_bet_amount('Hard 6')))
-        #         elif roll_sum == 8:
-        #             self.bankroll += self.bet_table.get_bet_amount('Place 8') * 7.0 / 6.0
-        #             if die1 == die2: # hardway
-        #                 self.bankroll += self.bet_table.get_bet_amount('Hard 8') * 9
-        #                 self.pnl_by_roll.append((self.bet_table.get_bet_amount('Place 6') * 7.0 / 6.0)+(self.bet_table.get_bet_amount('Hard 8') * 9))
-        #             else: # easy way
-        #                 self.bankroll -= self.bet_table.get_bet_amount('Hard 8') # back up on the hard 8
-        #                 self.pnl_by_roll.append((self.bet_table.get_bet_amount('Place 6') * 7.0 / 6.0)-(self.bet_table.get_bet_amount('Hard 8')))
-        #         else:
-        #             raise ValueError(f"Unhandled roll_sum: {roll_sum}")
-        #         self.update_bets_after_roll(die1, die2)                    
-        
-        print(f"Ending bankroll for this game: {self.bankroll}")
+            if self.execute_next_roll() == False: # roll ends craps game
+                print(f"Game #{self.game_counter}: {self.running_bankroll} on rack | {self.bet_table.get_total_bet()} on table, ended on the come out")
+            else: # the point has been established
+                if self.place_post_point_bets() == False: # note enough funds to place post point bets
+                    print(f"Too low bankroll to place bets: {self.running_bankroll}, setting to 0")
+                    self.running_bankroll = 0 # hack right now, to exit loop in simulator
+                else: # successfully placed post point bets
+                    game_ongoing = True
+                    while game_ongoing:
+                        game_ongoing == self.execute_next_roll()        
+        print(f"Ending bankroll for this game: {self.running_bankroll}")
         print(f"Bets remaining on felt for this game: {self.bet_table.get_total_bet()}")
         game_pnl = sum(self.pnl_by_roll)
         expected_pnl = (self.bankroll + self.bet_table.get_total_bet()) - self.game_start_bankroll
@@ -216,14 +144,17 @@ class CrapsSession:
         
         return pnl  # Returning pnl
 
+    # rolls the dice, adds roll to history, calls payout calculator, adds pnl to pnl_by_roll, returns true unless roll results in end of game.
     def execute_next_roll(self):
         die1, die2 = roll_dice()
         self.roll_history.append((die1, die2))
-        self.make_payouts(die1, die2)
-        # self.update_bet_table(die1, die2)
-        return die1, die2
+        self.pnl_by_roll.append(self.make_payouts(die1, die2))
+        if (self.point is None and (die1 + die2) in [2,3,7,11,12]) or (self.point is not None and (die1 + die2) == 7) or (self.point == (die1 + die2)): # come out roll winner or lose ends game, point established, seven out ends game, or winner 
+            self.point = None
+            return False
+        else: return True
     
-            # for bet in self.bet_table.table: # iterate through every bet in the bettable
+        # for bet in self.bet_table.table: # iterate through every bet in the bettable
         #     bet_name = bet['bet_name']
         #     bet_amount = bet['bet_amount']
 
@@ -314,3 +245,81 @@ class CrapsSession:
     #         # remove the hardway on 6 or 8, depending on which was rolled
     #     else: pass # not the come out roll, not the seven, bets aren't removed (unless easy ways)
         
+         # if roll_sum in [7, 11]:
+        #     self.bankroll += self.bet_table.get_bet_amount('Pass Line') # the winnings are put into the bankroll. the original bet is not put back in bankroll, but stays on bet table
+        #     self.pnl_by_roll.append(self.bet_table.get_bet_amount('Pass Line'))
+        # elif roll_sum in [2, 3, 12]:
+        #     self.pnl_by_roll.append(-self.bet_table.get_bet_amount('Pass Line'))
+        #     self.bet_table.remove_bet('Pass Line')  # Remove pass line bet, loss is already accounted for by subtracting initial bet from bankroll.
+        # else:
+        #     self.pnl_by_roll.append(0)
+        #     self.point = roll_sum
+        #     self.place_post_point_bets()
+        #     while self.point:
+        #         die1, die2 = roll_dice()
+        #         self.roll_history.append((die1, die2))
+        #         roll_sum = die1 + die2
+        #         if roll_sum in [2,3,11,12]: # No Changes
+        #             self.pnl_by_roll.append(0)
+        #         elif roll_sum == 7: # gotta pay don'ts
+        #             self.pnl_by_roll.append(-self.bet_table.get_total_bet())
+        #             self.bet_table.clear_bets()
+        #             self.point = None  # Reset point
+        #         elif roll_sum == self.point:
+        #             self.pnl_by_roll.append(self.bet_table.get_bet_amount('Pass Line'))
+        #             self.bankroll += self.bet_table.get_bet_amount('Pass Line')
+        #             if roll_sum in [4,10]:
+        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') * 2 # odds pay 2:1
+        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') # return odds
+        #                 self.pnl_by_roll.append(self.bet_table.get_bet_amount('Odds') * 2) # p&l is only profit. not original odds bet
+        #                 self.bet_table.remove_bet('Odds')
+        #                 # To Add: Hardway check
+        #             elif roll_sum in [5,9]:
+        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') * 1.5 # odds pay 3:2
+        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') # return odds
+        #                 self.pnl_by_roll.append(self.bet_table.get_bet_amount('Odds') * 1.5)
+        #                 self.bet_table.remove_bet('Odds')
+        #             elif roll_sum == 6: 
+        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') * 1.2 # odds pay 6:5
+        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') # return odds
+        #                 self.bet_table.remove_bet('Odds')
+        #                 if die1 == die2: # hardway
+        #                     self.bankroll += self.bet_table.get_bet_amount('Hard 6') * 9
+        #                     self.pnl_by_roll.append((self.bet_table.get_bet_amount('Odds') * 1.2)+(self.bet_table.get_bet_amount('Hard 6') * 9))   
+        #                 else: # easy 6
+        #                     self.bankroll -= self.bet_table.get_bet_amount('Hard 6') # back up on hard 6
+        #                     self.pnl_by_roll.append((self.bet_table.get_bet_amount('Odds') * 1.2)-(self.bet_table.get_bet_amount('Hard 6')))
+        #             elif roll_sum == 8:
+        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') * 1.2 # odds pay 6:5
+        #                 self.bankroll += self.bet_table.get_bet_amount('Odds') # return odds
+        #                 self.bet_table.remove_bet('Odds')
+        #                 if die1 == die2: # hardway
+        #                     self.bankroll += self.bet_table.get_bet_amount('Hard 8') * 9   
+        #                     self.pnl_by_roll.append((self.bet_table.get_bet_amount('Odds') * 1.2)+(self.bet_table.get_bet_amount('Hard 8') * 9)) 
+        #                 else: # easy 8
+        #                     self.bankroll -= self.bet_table.get_bet_amount('Hard 8') # back up on hard 8
+        #                     self.pnl_by_roll.append((self.bet_table.get_bet_amount('Odds') * 1.2)-(self.bet_table.get_bet_amount('Hard 8')))
+        #             else:
+        #                 raise ValueError(f"Unhandled roll_sum: {roll_sum}")
+        #             self.point = None     
+        #         elif roll_sum in [4,5,9,10]: # No Changes (not the point)
+        #             self.pnl_by_roll.append(0)
+        #         elif roll_sum == 6:
+        #             self.bankroll += self.bet_table.get_bet_amount('Place 6') * 7.0 / 6.0
+        #             if die1 == die2: # hardway
+        #                 self.bankroll += self.bet_table.get_bet_amount('Hard 6') * 9
+        #                 self.pnl_by_roll.append((self.bet_table.get_bet_amount('Place 6') * 7.0 / 6.0)+(self.bet_table.get_bet_amount('Hard 6') * 9))
+        #             else: # easy way
+        #                 self.bankroll -= self.bet_table.get_bet_amount('Hard 6') # back up on the hard 6
+        #                 self.pnl_by_roll.append((self.bet_table.get_bet_amount('Place 6') * 7.0 / 6.0)-(self.bet_table.get_bet_amount('Hard 6')))
+        #         elif roll_sum == 8:
+        #             self.bankroll += self.bet_table.get_bet_amount('Place 8') * 7.0 / 6.0
+        #             if die1 == die2: # hardway
+        #                 self.bankroll += self.bet_table.get_bet_amount('Hard 8') * 9
+        #                 self.pnl_by_roll.append((self.bet_table.get_bet_amount('Place 6') * 7.0 / 6.0)+(self.bet_table.get_bet_amount('Hard 8') * 9))
+        #             else: # easy way
+        #                 self.bankroll -= self.bet_table.get_bet_amount('Hard 8') # back up on the hard 8
+        #                 self.pnl_by_roll.append((self.bet_table.get_bet_amount('Place 6') * 7.0 / 6.0)-(self.bet_table.get_bet_amount('Hard 8')))
+        #         else:
+        #             raise ValueError(f"Unhandled roll_sum: {roll_sum}")
+        #         self.update_bets_after_roll(die1, die2)    
