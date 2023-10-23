@@ -17,7 +17,7 @@ def run_sim(strategy, num_sessions):
             my_session.run_game()  # Run a game, which may consist of 1 or more rolls
             pnl_ending = sum(my_session.pnl_by_roll)
             pnl_by_game.append(pnl_ending - pnl_starting)
-            if my_session.running_bankroll <= 0:  #  to do: Handle case with low but not zero bankroll
+            if my_session.running_bankroll['amount'] <= 0:  #  to do: Handle case with low but not zero bankroll
                 print(f"Session {session_num + 1}: Bankroll depleted. Ending session.")
                 break
 
