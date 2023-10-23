@@ -1,5 +1,5 @@
 from config import TRIPS_PER_SIM, TRIP_BANKROLL, SESSIONS_PER_TRIP, SESSION_BANKROLL, ROLLS_PER_HOUR, HRS_PER_SESSION
-from craps_game import CrapsGame
+from craps_session import CrapsSession
 from bet_table import BetTable
 from utilities import roll_dice
 

@@ -23,11 +23,11 @@ class Hedge6_Strategy(Strategy):
 
     def place_initial_bets(self, bet_table, running_bankroll):
         bet_amount = 25 # defined
-        if running_bankroll < bet_amount: return False
+        if running_bankroll < bet_amount: return False # not enough funds to place initial come out roll bet.
         else: 
             bet_table.add_bet('Pass Line', bet_amount)
-            running_bankroll -= bet_amount
-            return True
+            running_bankroll -= bet_amount # remove bet from bankroll after adding it to the table.
+            return True # successfully places initial pass line bet
         
     def place_post_point_bets(self, bet_table, point):
         if point == 4:
