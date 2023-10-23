@@ -21,6 +21,7 @@ class CrapsSession:
     #     self.strategy.update_bets_after_roll(self.bet_table, die1, die2, self.roll_history)
  
     def run_game(self):
+        ###print(f"Starting Bankroll for the Game: {self.running_bankroll['amount']}")
         self.game_counter += 1
         #print(f"Start of Game #{self.game_counter}, roll number {len(self.roll_history) + 1} of session. {self.running_bankroll['amount']} on rack | {self.bet_table.get_total_bet()} on table | Session pnl ${sum(self.pnl_by_roll)}")
         if self.place_initial_bets() == False: # not enough funds to place initial come out roll bet.
@@ -36,10 +37,12 @@ class CrapsSession:
                 else: # successfully placed post point bets
                     game_ongoing = True
                     while game_ongoing:
-                        game_ongoing = self.execute_next_roll()        
-        #print(f"Ending bankroll for this game: {self.running_bankroll['amount']}")
-        #print(f"Bets remaining on felt for this game: {self.bet_table.get_total_bet()}")
-
+                        game_ongoing = self.execute_next_roll()
+        self.running_bankroll['amount'] += self.bet_table.get_total_bet()
+        self.bet_table.clear_bets()
+        ###print(f"Ending Bankroll for the Game: {self.running_bankroll['amount']}")        
+        ###print(f"Bets remaining on felt for this game: {self.bet_table.get_total_bet()}")
+        #print(f"Roll History: {self.roll_history}")
     # This method walks through every bet. It adjusts the pnl, moves money in and out of bankroll, and adjusts the bet table. to do: break out this monster function
     def make_payouts(self, die1, die2):
         payout_multipliers = {
@@ -53,8 +56,8 @@ class CrapsSession:
                 9: 1.5, 
                 10: 2
             },
-            'Place 6': 7.0 / 6.0,
-            'Place 8': 7.0 / 6.0,
+            'Place 6': (7.0 / 6.0),
+            'Place 8': (7.0 / 6.0),
             'Hard 6': 9,
             'Hard 8': 9,
             # ... add other bets here
@@ -105,6 +108,7 @@ class CrapsSession:
                 elif roll_sum in [4, 10]: pass # no payouts in current strategy
                 elif roll_sum == 6: # 6, but not the point
                     payout = self.bet_table.get_bet_amount('Place 6') * payout_multipliers['Place 6'] # calc place 6 winnings
+                    ###print(f"rolled a 6: {payout}")
                     pnl += payout # add payout to pnl
                     self.running_bankroll['amount'] += payout # add payout to bankroll
                     if die1 == die2: # hard 6
@@ -129,7 +133,7 @@ class CrapsSession:
                         # instead of removing the lost hardway and adding it back, we'll just leave it (and subtract from bankroll above)
                 else:
                     print(f"something has gone wrong, should not reach here. diagnose")
-        
+        ###print((die1, die2, pnl))
         return pnl  # Returning pnl
 
     # rolls the dice, adds roll to history, calls payout calculator, adds pnl to pnl_by_roll, returns true unless roll results in end of game.
@@ -148,6 +152,6 @@ class CrapsSession:
             else: # if it was not the come out
                 return True
             
-# TODO: [logging] game starting bankroll, game ending bankroll, $ left on felt, p&l
 # TODO: [feature] incorporate basic progression, increment place bet upon win.
 # TODO: [flow] clean up run_game flow. improve bankroll check, allow simpler body of method, call other methods.
+# TODO: [testing] test suite with deterministic dice rolls. walk through various cases and test p&l and payout calculations
