@@ -22,8 +22,8 @@ class CrapsSession:
  
     def run_game(self):
         self.game_counter += 1
-        print(f"Start of Game #{self.game_counter}, roll number {len(self.roll_history) + 1} of session.
-              {self.running_bankroll} on rack | {self.bet_table.get_total_bet()} on table | Session pnl ${sum(self.pnl_by_roll)}")
+        print(f"Start of Game #{self.game_counter}, roll number {len(self.roll_history) + 1} of session." +
+              "{self.running_bankroll} on rack | {self.bet_table.get_total_bet()} on table | Session pnl ${sum(self.pnl_by_roll)}")
         if self.place_initial_bets() == False: # not enough funds to place initial come out roll bet.
             print(f"Too low bankroll to place bets: {self.running_bankroll}, setting to 0")
             self.running_bankroll = 0 # hack right now, to exit loop in simulator
