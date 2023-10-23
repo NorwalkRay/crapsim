@@ -147,3 +147,7 @@ class CrapsSession:
                 return True
             else: # if it was not the come out
                 return True
+            
+# TODO: [logging] game starting bankroll, game ending bankroll, $ left on felt, p&l
+# TODO: [feature] incorporate basic progression, increment place bet upon win.
+# TODO: [flow] clean up run_game flow. improve bankroll check, allow simpler body of method, call other methods.

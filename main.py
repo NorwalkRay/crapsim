@@ -7,7 +7,7 @@ from utilities import roll_dice
 if __name__ == '__main__':
 
     strategy = Hedge6_Strategy()
-    pnl_by_roll, pnl_by_game, pnl_by_session = run_sim(strategy, num_sessions = 50)
+    pnl_by_roll, pnl_by_game, pnl_by_session = run_sim(strategy, num_sessions = 500)
 
     # Generate Metrics and Charts --- move this elsewhere eventually.
     avg_pl_per_roll = np.mean(pnl_by_roll)

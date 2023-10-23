@@ -30,6 +30,8 @@ class Hedge6_Strategy(Strategy):
             return True # successfully places initial pass line bet
         
     def place_post_point_bets(self, bet_table, running_bankroll, point):
+        # TODO: [fix] handle >0, but not enough for full bet bankroll.
+        
         place_bet_amount = 60 # defined
         hardway_bet_amount = 50 # defined
 
