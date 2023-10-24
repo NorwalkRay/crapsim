@@ -11,59 +11,120 @@ class CrapsSession:
         self.strategy = strategy # betting strategy to use
         self.pnl_by_roll = [] # net p&l after each roll, accumulates over whole session
 
-    def place_initial_bets(self):
-        return self.strategy.place_initial_bets(self.bet_table, self.running_bankroll) # updates the bet table with the initial bets of the strat
-    
-    def place_post_point_bets(self):
-        return self.strategy.place_post_point_bets(self.bet_table, self.running_bankroll, self.point)
+    def place_bets(self, bet_table, point):
+        new_bets = self.strategy.get_bets(bet_table, point)
+        total_new_bet_amount = sum(bet_amount for _, bet_amount in new_bets)
+        
+        if self.running_bankroll['amount'] >= total_new_bet_amount:
+            for bet_name, bet_amount in new_bets:
+                bet_table.add_bet(bet_name, bet_amount)
+                self.running_bankroll['amount'] -= bet_amount
+        else:
+            print("Insufficient funds to place all bets. Ending session.")
+            self.running_bankroll['amount'] = 0
 
-    # def update_bets_after_roll(self, die1, die2):
-    #     self.strategy.update_bets_after_roll(self.bet_table, die1, die2, self.roll_history)
- 
+    '''
+    (1) roll the dice, (2) add roll to history, (3) return die numbers.
+    '''
+    def execute_roll(self):
+        die1, die2 = roll_dice()
+        roll_sum = die1 + die2
+        self.roll_history.append((die1, die2))
+        return die1, die2
+
+        self.pnl_by_roll.append(self.make_payouts(die1, die2))
+        if (self.point is None and (roll_sum) in [2,3,7,11,12]) or (self.point is not None and (roll_sum) == 7) or (self.point == roll_sum): # come out roll winner or lose ends game, point established, seven out ends game, or winner 
+            self.point = None
+            return False
+        else: # the game continues
+            if self.point is None: # if it was the come out roll
+                self.point = roll_sum # then the point is now established
+                return True
+            else: # if it was not the come out
+                return True
+    
     def run_game(self):
+        game_ongoing = True
+        while game_ongoing:
+            self.place_bets(self.bet_table, self.point)
+            die1, die2 = self.execute_roll()
+            roll_sum = die1 + die2
+            self.pay_winners(die1, die2)
+            # remove losers
+            if ((self.point is None and (roll_sum) in [2,3,7,11,12]) or # come out roll winner or lose ends game
+                (self.point is not None and (roll_sum) == 7) or # point established, seven out ends game
+                (self.point == roll_sum)): # or winner
+                self.point = None ## TODO: Move this elsewhere
+                game_ongoing = False
+            
         ###print(f"Starting Bankroll for the Game: {self.running_bankroll['amount']}")
         self.game_counter += 1
         #print(f"Start of Game #{self.game_counter}, roll number {len(self.roll_history) + 1} of session. {self.running_bankroll['amount']} on rack | {self.bet_table.get_total_bet()} on table | Session pnl ${sum(self.pnl_by_roll)}")
-        if self.place_initial_bets() == False: # not enough funds to place initial come out roll bet.
-            print(f"Too low bankroll to place bets: {self.running_bankroll['amount']}, setting to 0")
-            self.running_bankroll['amount'] = 0 # hack right now, to exit loop in simulator
-        else: # initial come out bet(s) successfully placed
-            if self.execute_next_roll() == False: # roll ends craps game
-                pass #print(f"Game #{self.game_counter}: {self.running_bankroll['amount']} on rack | {self.bet_table.get_total_bet()} on table, ended on the come out")
-            else: # the point has been established
-                if self.place_post_point_bets() == False: # note enough funds to place post point bets
-                    print(f"Too low bankroll to place bets: {self.running_bankroll['amount']}, setting to 0")
-                    self.running_bankroll['amount'] = 0 # hack right now, to exit loop in simulator
-                else: # successfully placed post point bets
-                    game_ongoing = True
-                    while game_ongoing:
-                        game_ongoing = self.execute_next_roll()
-        self.running_bankroll['amount'] += self.bet_table.get_total_bet()
-        self.bet_table.clear_bets()
+        #self.running_bankroll['amount'] += self.bet_table.get_total_bet()
+        # self.bet_table.clear_bets()
         ###print(f"Ending Bankroll for the Game: {self.running_bankroll['amount']}")        
         ###print(f"Bets remaining on felt for this game: {self.bet_table.get_total_bet()}")
         #print(f"Roll History: {self.roll_history}")
+
     # This method walks through every bet. It adjusts the pnl, moves money in and out of bankroll, and adjusts the bet table. to do: break out this monster function
-    def make_payouts(self, die1, die2):
+    def pay_winners(self, die1, die2):
         payout_multipliers = {
-            'Pass Line': 1,
-            #'Don\'t Pass': 1,
-            'Odds': {
-                4: 2, 
-                5: 1.5, 
-                6: 1.2, 
-                8: 1.2, 
-                9: 1.5, 
-                10: 2
-            },
-            'Place 6': (7.0 / 6.0),
-            'Place 8': (7.0 / 6.0),
-            'Hard 6': 9,
-            'Hard 8': 9,
-            # ... add other bets here
+        'PASS_LINE': 1,
+        'ODDS': {4: 2, 5: 1.5, 6: 1.2, 8: 1.2, 9: 1.5, 10: 2},
+        'PLACE_6': 7.0 / 6.0,
+        'PLACE_8': 7.0 / 6.0,
+        'HARD_6': 9,
+        'HARD_8': 9,
+        # ... add other bets here
         }
         roll_sum = die1 + die2
         pnl = 0  # Initialize Profit and Loss to 0
+
+        def apply_payout(bet_name, multiplier):
+            nonlocal pnl
+            payout = self.bet_table.get_bet_amount(bet_name) * multiplier
+            pnl += payout
+            self.running_bankroll['amount'] += payout
+            
+        if self.point is None:  # come out roll
+            if roll_sum in [7, 11]:  # winner on come out roll
+                apply_payout('PASS_LINE', payout_multipliers['PASS_LINE'])
+
+            elif roll_sum in [2, 3, 12]:  # loser on come out roll
+                pnl -= self.bet_table.get_bet_amount('PASS_LINE')
+
+            else:  # point is established
+                for bet_name in self.bet_table.table.keys():
+                    if roll_sum == 7:  # seven out
+                        pnl -= self.bet_table.get_bet_amount(bet_name)
+            
+                    elif roll_sum == self.point:  # hit the point
+                        if bet_name in ['PASS_LINE', 'ODDS']:
+                            apply_payout(bet_name, payout_multipliers.get(bet_name, {}).get(roll_sum, 0))
+            
+                    elif roll_sum in [6, 8]:  # 6 or 8 rolled, but not the point
+                        if bet_name == f'PLACE_{roll_sum}':
+                            apply_payout(bet_name, payout_multipliers.get(bet_name, 0))
+
+                        if die1 == die2 and bet_name == f'HARD_{roll_sum}':
+                            apply_payout(bet_name, payout_multipliers.get(bet_name, 0))
+                        elif bet_name == f'HARD_{roll_sum}':
+                            pnl -= self.bet_table.get_bet_amount(bet_name)
+                            self.running_bankroll['amount'] -= self.bet_table.get_bet_amount(bet_name)
+
+        return pnl
+
+
+
+
+
+
+
+
+
+
+
+
 
         if self.point is None: # come out roll
             if roll_sum in [7, 11]: # come out winner
@@ -136,21 +197,7 @@ class CrapsSession:
         ###print((die1, die2, pnl))
         return pnl  # Returning pnl
 
-    # rolls the dice, adds roll to history, calls payout calculator, adds pnl to pnl_by_roll, returns true unless roll results in end of game.
-    def execute_next_roll(self):
-        die1, die2 = roll_dice()
-        roll_sum = die1 + die2
-        self.roll_history.append((die1, die2))
-        self.pnl_by_roll.append(self.make_payouts(die1, die2))
-        if (self.point is None and (roll_sum) in [2,3,7,11,12]) or (self.point is not None and (roll_sum) == 7) or (self.point == roll_sum): # come out roll winner or lose ends game, point established, seven out ends game, or winner 
-            self.point = None
-            return False
-        else: # the game continues
-            if self.point is None: # if it was the come out roll
-                self.point = roll_sum # then the point is now established
-                return True
-            else: # if it was not the come out
-                return True
+
             
 # TODO: [feature] incorporate basic progression, increment place bet upon win.
 # TODO: [flow] clean up run_game flow. improve bankroll check, allow simpler body of method, call other methods.

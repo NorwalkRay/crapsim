@@ -1,100 +1,79 @@
 from abc import ABC, abstractmethod
 
-# Abstract class that represents methods all strategies should have.
+'''
+Abstract class that represents methods all strategies should have.
+'''
 class Strategy(ABC):
     
     @abstractmethod
-    def place_initial_bets(self, bet_table, running_bankroll):
+    def get_bets(self, bet_table, point):
+        # Returns a dict of bets to be placed
         pass
-    
+
     @abstractmethod
-    def place_post_point_bets(self, bet_table, running_bankroll, point):
+    def reset(self):
+        # Resets the progression of a strategy
         pass
+
+'''
+This is an instance of the Strategy abstract class. The strategy will define how to bet over the course of a craps session
+(it persists across games). The strategy will take the game state as an input and use the strategy logic to output what bets
+should be made.
+'''
+class Hedge68_Strategy(Strategy):
     
-    # @abstractmethod
-    # def update_bets_after_roll(self, bet_table, die1, die2, roll_history):
-    #     pass
+    def __init__(self):
+        self.base_pass_line_bet = 25
+        self.base_place_bet = 60
+        self.base_hardway_bet = 25
+        self.pass_line_winner_count = 0
+        self.hardway_winner_count = 0
 
-# This is the instance of the specific strategy we're testing. All the strategy logic belongs in here
-class Hedge6_Strategy(Strategy):
+        self.bets_by_point = { # the guts of the strategy
+            None: [('PASS_LINE', self.base_pass_line_bet)],
+            4: [('PASS_LINE', self.base_pass_line_bet), 
+                ('ODD_4', self.base_pass_line_bet * 3), 
+                ('PLACE_6', self.base_place_bet),
+                ('PLACE_8', self.base_place_bet),
+                ('HARD_6', self.base_hardway_bet),
+                ('HARD_8', self.base_hardway_bet)],
+            5: [('PASS_LINE', self.base_pass_line_bet), 
+                ('ODD_5', self.base_pass_line_bet * 4),
+                ('PLACE_6', self.base_place_bet),
+                ('PLACE_8', self.base_place_bet),
+                ('HARD_6', self.base_hardway_bet),
+                ('HARD_8', self.base_hardway_bet)],
+            6: [('PASS_LINE', self.base_pass_line_bet),
+                ('ODD_6', self.base_pass_line_bet * 5),
+                ('PLACE_8', self.base_place_bet),
+                ('HARD_6', self.base_hardway_bet),
+                ('HARD_8', self.base_hardway_bet)],
+            8: [('PASS_LINE', self.base_pass_line_bet),
+                ('ODD_8', self.base_pass_line_bet * 5),
+                ('PLACE_6', self.base_place_bet),
+                ('HARD_6', self.base_hardway_bet),
+                ('HARD_8', self.base_hardway_bet)],
+            9: [('PASS_LINE', self.base_pass_line_bet),
+                ('ODD_9', self.base_pass_line_bet * 4),
+                ('PLACE_6', self.base_place_bet),
+                ('PLACE_8', self.base_place_bet),
+                ('HARD_6', self.base_hardway_bet),
+                ('HARD_8', self.base_hardway_bet)],
+            10: [('PASS_LINE', self.base_pass_line_bet),
+                ('ODD_10', self.base_pass_line_bet * 3),
+                ('PLACE_6', self.base_place_bet),
+                ('PLACE_8', self.base_place_bet),
+                ('HARD_6', self.base_hardway_bet),
+                ('HARD_8', self.base_hardway_bet)],
+        }
+
+    def get_bets(self, bet_table, point):
+        new_bets = {}
+        for bet_name, bet_amount in self.bets_by_point.get(point, []):
+            if bet_table.get_bet_amount(bet_name) == 0:
+                new_bets[bet_name] = bet_amount
+        return new_bets
     
-    def __init__(self): pass
-        # self.hardway_counter = 0
-
-    def place_initial_bets(self, bet_table, running_bankroll):
-        bet_amount = 25 # defined
-        if running_bankroll['amount'] < bet_amount: return False # not enough funds to place initial come out roll bet.
-        else: 
-            bet_table.add_bet('Pass Line', bet_amount)
-            running_bankroll['amount'] -= bet_amount # remove bet from bankroll after adding it to the table.
-            return True # successfully places initial pass line bet
-        
-    def place_post_point_bets(self, bet_table, running_bankroll, point):
-        # TODO: [fix] handle >0, but not enough for full bet bankroll.
-        
-        place_bet_amount = 60 # defined
-        hardway_bet_amount = 50 # defined
-
-        if point == 4:
-            total_bet = (bet_table.get_bet_amount('Pass Line') * 3) + place_bet_amount + hardway_bet_amount
-            if running_bankroll['amount'] < total_bet: return False # not enough funds
-            else:
-                bet_table.add_bet('Odds', bet_table.get_bet_amount('Pass Line') * 3)
-                bet_table.add_bet('Place 6', place_bet_amount)
-                bet_table.add_bet('Hard 6', hardway_bet_amount)
-                running_bankroll['amount'] -= total_bet
-                return True 
-        elif point == 5:
-            total_bet = (bet_table.get_bet_amount('Pass Line') * 4) + place_bet_amount + hardway_bet_amount
-            if running_bankroll['amount'] < total_bet: return False # not enough funds
-            else:
-                bet_table.add_bet('Odds', bet_table.get_bet_amount('Pass Line') * 4)
-                bet_table.add_bet('Place 6', place_bet_amount)
-                bet_table.add_bet('Hard 6', hardway_bet_amount)
-                running_bankroll['amount'] -= total_bet
-                return True
-        elif point == 6:
-            total_bet = (bet_table.get_bet_amount('Pass Line') * 5) + place_bet_amount + (2 * hardway_bet_amount)
-            if running_bankroll['amount'] < total_bet: return False # not enough funds
-            else:
-                bet_table.add_bet('Odds', bet_table.get_bet_amount('Pass Line') * 5)
-                bet_table.add_bet('Place 6', place_bet_amount)
-                bet_table.add_bet('Hard 6', hardway_bet_amount)
-                bet_table.add_bet('Hard 8', hardway_bet_amount)
-                running_bankroll['amount'] -= total_bet
-                return True
-        elif point == 8:
-            total_bet = (bet_table.get_bet_amount('Pass Line') * 5) + place_bet_amount + (2 * hardway_bet_amount)
-            if running_bankroll['amount'] < total_bet: return False # not enough funds
-            else:
-                bet_table.add_bet('Odds', bet_table.get_bet_amount('Pass Line') * 5)
-                bet_table.add_bet('Place 6', place_bet_amount)
-                bet_table.add_bet('Hard 6', hardway_bet_amount)
-                bet_table.add_bet('Hard 8', hardway_bet_amount)
-                running_bankroll['amount'] -= total_bet
-                return True
-        elif point == 9:
-            total_bet = (bet_table.get_bet_amount('Pass Line') * 4) + place_bet_amount + hardway_bet_amount
-            if running_bankroll['amount'] < total_bet: return False # not enough funds
-            else:
-                bet_table.add_bet('Odds', bet_table.get_bet_amount('Pass Line') * 4)
-                bet_table.add_bet('Place 6', place_bet_amount)
-                bet_table.add_bet('Hard 6', hardway_bet_amount)
-                running_bankroll['amount'] -= total_bet
-                return True
-        elif point == 10:
-            total_bet = (bet_table.get_bet_amount('Pass Line') * 3) + place_bet_amount + hardway_bet_amount
-            if running_bankroll['amount'] < total_bet: return False # not enough funds
-            else:
-                bet_table.add_bet('Odds', bet_table.get_bet_amount('Pass Line') * 3)
-                bet_table.add_bet('Place 6', place_bet_amount)
-                bet_table.add_bet('Hard 6', hardway_bet_amount)
-                running_bankroll['amount'] -= total_bet
-                return True
-        else:
-            # This should not happen as craps only has points 4, 5, 6, 8, 9, and 10
-            raise ValueError("Invalid point value")
-
-    # def update_bets_after_roll(self, bet_table, die1, die2, roll_history):
-    #     # no updates to bets after rolls in this strategy
-    #     pass
+    def reset(self):
+        self.pass_line_winner_count = 0
+        self.hardway_winner_count = 0

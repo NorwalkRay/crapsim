@@ -1,12 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from strategy import Hedge6_Strategy
+from strategy import Hedge68_Strategy
 from simulation import run_sim
 from utilities import roll_dice
 
 if __name__ == '__main__':
 
-    strategy = Hedge6_Strategy()
+    strategy = Hedge68_Strategy()
     pnl_by_roll, pnl_by_game, pnl_by_session = run_sim(strategy, num_sessions = 10000)
 
     # Generate Metrics and Charts --- move this elsewhere eventually.
