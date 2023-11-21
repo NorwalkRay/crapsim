@@ -7,28 +7,28 @@ from utilities import roll_dice
 if __name__ == '__main__':
 
     strategy = Hedge68_Strategy()
-    pnl_by_roll, pnl_by_game, pnl_by_session = run_sim(strategy, num_sessions = 10000)
+    pnlByRoll, pnlByGame, pnlBySession = run_sim(strategy, numSessions = 5)
 
     # Generate Metrics and Charts --- move this elsewhere eventually.
-    avg_pl_per_roll = np.mean(pnl_by_roll)
-    avg_pl_per_game = np.mean(pnl_by_game)
-    avg_pl_per_session = np.mean(pnl_by_session)
+    avgPnlPerRoll = np.mean(pnlByRoll)
+    avgPnlPerGame = np.mean(pnlByGame)
+    avgPnlPerSession = np.mean(pnlBySession)
 
-    print(f"Average P&L Per Roll: {avg_pl_per_roll}")
-    print(f"Average P&L Per Game: {avg_pl_per_game}")
-    print(f"Average P&L Per Session: {avg_pl_per_session}")
+    print(f"Average P&L Per Roll: {avgPnlPerRoll}")
+    print(f"Average P&L Per Game: {avgPnlPerGame}")
+    print(f"Average P&L Per Session: {avgPnlPerSession}")
 
     plt.figure()
-    plt.hist(pnl_by_roll, bins=50)
+    plt.hist(pnlByRoll, bins=50)
     plt.title("Distribution of Roll P&L")
     plt.show(block=True)
 
     plt.figure()
-    plt.hist(pnl_by_game, bins=50)
+    plt.hist(pnlByGame, bins=50)
     plt.title("Distribution of Game P&L")
     plt.show(block=True)
 
     plt.figure()
-    plt.hist(pnl_by_session, bins=50)
+    plt.hist(pnlBySession, bins=50)
     plt.title("Distribution of Session P&L")
     plt.show(block=True)
