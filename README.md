@@ -1,0 +1,2 @@
+# crapsim
+Craps Strategy Simulator
