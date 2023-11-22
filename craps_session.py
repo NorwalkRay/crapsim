@@ -88,10 +88,11 @@ class CrapsSession:
         elif betName in ['HARD_6', 'HARD_8']:
             if rollSum == int(betName.split('_')[1]) and die1 == die2:
                 apply_payout(payoutMultipliers[betName])
+            elif self.point is not None and rollSum == 7:
+                apply_loss()
             else:
-                apply_loss()
-            if self.point is not None and rollSum == 7:
-                apply_loss()
+                # Neither win nor lose - no action needed
+                pass
         print(f"Bet: {betName}, Roll Sum: {rollSum}, P&L for this bet: {betPnl}, Point is: {self.point}")
         return betPnl
 

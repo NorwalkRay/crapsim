@@ -29,7 +29,8 @@ class Hedge68_Strategy(Strategy):
         self.passLineWinnerCount = 0
         self.hardwayWinnerCount = 0
 
-        self.betsByPoint = { # the guts of the strategy
+        self.betsByPoint = { 
+        # the guts of the strategy, this lists the bets that are added to the bet table for a given point being established
             None: [('PASS_LINE', self.basePassLineBet)],
             4: [('PASS_LINE', self.basePassLineBet), 
                 ('ODD_4', self.basePassLineBet * 3), 
